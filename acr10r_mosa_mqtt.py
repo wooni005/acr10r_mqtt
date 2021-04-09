@@ -87,14 +87,11 @@ def communicationThread():
         else:
             try:
                 msgLen = len(recvMsg)
+                # print("Received msgLen: %d msg: " % msgLen) #, end='')
                 if msgLen == 8:
                     pass #Ignore msg
                 #     # Register get request from Storion to ACR10
                     # print(" 8: ", end='')
-                    # for x in recvMsg:
-                    #     print("%02X " % x, end='')
-                    # print()
-                #     print(" msg length: %d" % len(recvMsg))
                 elif msgLen == 21:
                     pass # Ignore msg
                 else:
@@ -112,10 +109,15 @@ def communicationThread():
                         recvMsg = recvMsg[8:]
                         # print("89", end='')
                     elif msgLen == 81:
-                        pass # Do nothing
+                        pass # Process the message normally
                         # print("81", end='')
+                    elif msgLen == 57:
+                        # This message is only used by Storion T10 after unit is installed, sort of testmodus
+                        pass # Process the message normally
+                        # print("57", end='')
                     else:
                         # Unknown message: Ignore
+                        # print("Unknown msgLength (msgLen=%d): " % msgLen, end='')
                         continue
 
                     # Check the receive msg CRC
@@ -180,7 +182,7 @@ def communicationThread():
                     # 253-254:23+24+25+26: 4 bytes: Pa
                     i = 23
                     val = struct.unpack(">i", recvMsg[i:i + 4])[0]
-                    # print("Pa: %3dW  " % val, end='')
+                    # print("Pa:    " % val, end='')
                     sensorData['Pa'] = val
 
                     # 255-256:27+28+29+30: 4 bytes: Pb
