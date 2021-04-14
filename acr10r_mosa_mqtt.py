@@ -180,22 +180,22 @@ def communicationThread():
                     # print("Freq: %.2f Hz" % (float(val)/100))
 
                     # 253-254:23+24+25+26: 4 bytes: Pa
-                    i = 23
-                    val = struct.unpack(">i", recvMsg[i:i + 4])[0]
-                    # print("Pa:    " % val, end='')
-                    sensorData['Pa'] = val
+                    # i = 23
+                    # val = struct.unpack(">i", recvMsg[i:i + 4])[0]
+                    # # print("Pa:    " % val, end='')
+                    # sensorData['Pa'] = val
 
-                    # 255-256:27+28+29+30: 4 bytes: Pb
-                    i = 27
-                    val = struct.unpack(">i", recvMsg[i:i + 4])[0]
-                    # print("Pb: %3dW  " % val, end='')
-                    sensorData['Pb'] = val
+                    # # 255-256:27+28+29+30: 4 bytes: Pb
+                    # i = 27
+                    # val = struct.unpack(">i", recvMsg[i:i + 4])[0]
+                    # # print("Pb: %3dW  " % val, end='')
+                    # sensorData['Pb'] = val
 
-                    # 257-258:31+32+33+34: 4 bytes: Pc
-                    i = 31
-                    val = struct.unpack(">i", recvMsg[i:i + 4])[0]
-                    # print("Pc: %3dW  " % val, end='')
-                    sensorData['Pc'] = val
+                    # # 257-258:31+32+33+34: 4 bytes: Pc
+                    # i = 31
+                    # val = struct.unpack(">i", recvMsg[i:i + 4])[0]
+                    # # print("Pc: %3dW  " % val, end='')
+                    # sensorData['Pc'] = val
 
                     # 259-260:35+36+37+38: 4 bytes: Ptot
                     i = 35
