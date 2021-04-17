@@ -22,7 +22,6 @@ import serviceReport
 import settings
 import modbus
 
-
 current_sec_time = lambda: int(round(time.time()))
 current_milli_time = lambda: int(round(time.time() * 1000))
 oldTimeout = 0
