@@ -22,18 +22,23 @@ import serviceReport
 import settings
 import modbus
 
-current_sec_time = lambda: int(round(time.time()))
-current_milli_time = lambda: int(round(time.time() * 1000))
 oldTimeout = 0
+exitThread = False
 
-exit = False
+
+def current_sec_time():
+    return int(round(time.time()))
+
+
+def current_milli_time():
+    return int(round(time.time() * 1000))
 
 
 def signal_handler(_signal, frame):
-    global exit
+    global exitThread
 
     print('You pressed Ctrl+C!')
-    exit = True
+    exitThread = True
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -47,18 +52,15 @@ def on_connect(client, userdata, flags, rc):
 
 
 # The callback for when a PUBLISH message is received from the server
-def on_message(client, userdata, msg):
+def on_message(_client, userdata, msg):
     print(('ERROR: Received ' + msg.topic + ' in on_message function' + str(msg.payload)))
 
 
 def communicationThread():
-    global sensorData
     global oldTimeout
-    global serialPort
-    global exit
+    global exitThread
 
     oldTimeout = current_sec_time()
-    serialPort = {}
     powerCntAdd = 1000
     powerAvgAdd = 0
     powerAvgSend = 0
@@ -82,24 +84,24 @@ def communicationThread():
             else:
                 # a "real" error occurred
                 print(e)
-                exit = True
+                exitThread = True
         else:
             try:
                 msgLen = len(recvMsg)
                 # print("Received msgLen: %d msg: " % msgLen) #, end='')
                 if msgLen == 8:
-                    pass #Ignore msg
+                    pass    # Ignore msg
                 #     # Register get request from Storion to ACR10
                     # print(" 8: ", end='')
                 elif msgLen == 21:
-                    pass # Ignore msg
+                    pass    # Ignore msg
                 else:
                     #  Check the ACR10R Rx timeout
                     if (current_sec_time() - oldTimeout) > 300:
                         # Reset the RFLink Rx timeout timer
                         oldTimeout = current_sec_time()
 
-                        #Report failure to Home Logic system check
+                        # Report failure to Home Logic system check
                         serviceReport.sendFailureToHomeLogic(serviceReport.ACTION_RESTART, 'ACR10R receive timeout (5 min no data received)!')
 
                     # Answer from ACR10
@@ -119,7 +121,7 @@ def communicationThread():
                         # print("Unknown msgLength (msgLen=%d): " % msgLen, end='')
                         continue
 
-                    # Check the receive msg CRC
+                    # Check the received msg CRC
                     if not modbus.checkRecvMsgCRC(recvMsg):
                         continue
 
@@ -204,7 +206,7 @@ def communicationThread():
                     powerAvgAdd += powerTotal
                     powerCntAdd += 1
                     powerAvg = powerAvgAdd / powerCntAdd
-                    powerAvgDiff = abs(powerAvg / 2) # 25% of powerTotal
+                    powerAvgDiff = abs(powerAvg / 2)    # 25% of powerTotal
                     # print("powerAvgDiff: %d" % powerAvgDiff)
                     if (powerCntAdd >= 7) or (powerTotal > (powerAvg + powerAvgDiff)) or (powerTotal < (powerAvg - powerAvgDiff)):
                         powerAvgSend = powerAvg
@@ -305,7 +307,7 @@ except Exception:
 # manual interface.
 
 
-while not exit:
+while not exitThread:
     time.sleep(1)  # 60s
 
 # if serialPort is not None:

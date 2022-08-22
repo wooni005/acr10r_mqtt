@@ -3,14 +3,8 @@
 import os
 import sys
 import signal
-import paho.mqtt.publish as mqtt_publish
-import paho.mqtt.client as mqtt_client
-import serial
-import select
-import tty
 import termios
 import time
-import traceback
 import socket
 import fcntl
 import errno
@@ -25,19 +19,24 @@ import settings
 sensorData = {}
 humStatusTable = ["Dry", "Comfort", "Normal", "Wet"]
 
-current_sec_time = lambda: int(round(time.time()))
-current_milli_time = lambda: int(round(time.time() * 1000))
-
-exit = False
+exitProgram = False
 serialPort = None
 oldSettings = None
 
 
+def current_sec_time():
+    return int(round(time.time()))
+
+
+def current_milli_time():
+    return int(round(time.time() * 1000))
+
+
 def signal_handler(_signal, frame):
-    global exit
+    global exitProgram
 
     print('You pressed Ctrl+C!')
-    exit = True
+    exitProgram = True
 
 
 def initAnykey():
@@ -46,9 +45,9 @@ def initAnykey():
     oldSettings = termios.tcgetattr(sys.stdin)
     newSettings = termios.tcgetattr(sys.stdin)
     # newSettings[3] = newSettings[3] & ~(termios.ECHO | termios.ICANON) # lflags
-    newSettings[3] = newSettings[3] & ~(termios.ECHO | termios.ICANON) # lflags
+    newSettings[3] = newSettings[3] & ~(termios.ECHO | termios.ICANON)  # lflags
     newSettings[6][termios.VMIN] = 0  # cc
-    newSettings[6][termios.VTIME] = 0 # cc
+    newSettings[6][termios.VTIME] = 0  # cc
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, newSettings)
 
 
@@ -72,17 +71,17 @@ def printHelp():
     print()
 
 
-def printHexString(str):
-    for char in str:
+def printHexString(_str):
+    for char in _str:
         print("%02X " % (ord(char)), end='')
     print()
 
 
-def printHexByteString(str):
-    for x in recvMsg:
-        print("%02X " % x, end='')
+def printHexByteString(_str):
+    for v in _str:
+        print("%02X " % v, end='')
     print()
-    print(" msg length: %d" % len(recvMsg))
+    print(" msg length: %d" % len(_str))
 
 
 def sendModbusMsg(sendMsg, modBusAddr):
@@ -119,8 +118,8 @@ signal.signal(signal.SIGINT, signal_handler)
 # Give Home Assistant and Mosquitto the time to startup
 time.sleep(2)
 
-masterMsgWithPower    = "\x05\x03\x00\xF3\x00\x26" #, 0x35, 0xA7]
-masterMsgWithoutPower = "\x05\x03\x00\xF2\x00\x13" #, 0xA4, 0x70]
+masterMsgWithPower = "\x05\x03\x00\xF3\x00\x26"  # 0x35, 0xA7]
+masterMsgWithoutPower = "\x05\x03\x00\xF2\x00\x13"  # 0xA4, 0x70]
 
 sendCrLf = False
 initAnykey()
@@ -136,13 +135,13 @@ powerAvgAdd = 0
 printHelp()
 
 try:
-    while not exit:
+    while not exitProgram:
         ch = os.read(sys.stdin.fileno(), 1)
         if ch != b'':
             # Key is pressed
             if ch == b'\x1b':
                 print("Escape pressed: Exit")
-                exit = True
+                exitProgram = True
             elif ch == b'r':
                 print("Reset powerAvg")
                 powerCntAdd = 0
@@ -175,13 +174,13 @@ try:
                 else:
                     # a "real" error occurred
                     print(e)
-                    exit = True
+                    exitProgram = True
             else:
                 msgLen = len(recvMsg)
                 # print("msgLen: %d" % msgLen)
                 # printHexByteString(recvMsg)
                 if msgLen == 8:
-                    pass #Ignore msg
+                    pass  # Ignore msg
                 #     # Register get request from Storion to ACR10
                     # print(" 8: ", end='')
                     # for x in recvMsg:
@@ -189,7 +188,7 @@ try:
                     # print()
                 #     print(" msg length: %d" % len(recvMsg))
                 elif msgLen == 21:
-                    pass # Ignore msg
+                    pass  # Ignore msg
                 else:
                     # Answer from ACR10
                     if msgLen == 81:
@@ -294,7 +293,7 @@ try:
                         powerAvgAdd += powerTotal
                         powerCntAdd += 1
                         powerAvg = int(powerAvgAdd / powerCntAdd)
-                        powerAvgDiff = abs(powerAvg / 2) # 50% of powerTotal
+                        powerAvgDiff = abs(powerAvg / 2)    # 50% of powerTotal
 
                         print("Pavg: %4dW" % powerAvg, end='')
                         if powerCntAdd >= 30:
